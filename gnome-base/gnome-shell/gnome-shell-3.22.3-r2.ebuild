@@ -3,9 +3,10 @@
 
 EAPI=6
 GNOME2_LA_PUNT="yes"
+GNOME2_EAUTORECONF="yes"
 PYTHON_COMPAT=( python{3_4,3_5,3_6} )
 
-inherit autotools gnome2 multilib pax-utils python-r1 systemd
+inherit gnome2 multilib pax-utils python-r1 systemd
 
 DESCRIPTION="Provides core UI functions for the GNOME 3 desktop"
 HOMEPAGE="https://wiki.gnome.org/Projects/GnomeShell"
@@ -15,7 +16,7 @@ SLOT="0"
 IUSE="+bluetooth +browser-extension +ibus +networkmanager nsplugin -openrc-force"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="amd64 x86"
 
 # libXfixes-5.0 needed for pointer barriers
 # FIXME:
@@ -109,31 +110,25 @@ DEPEND="${COMMON_DEPEND}
 	>=dev-util/gdbus-codegen-2.45.3
 	>=dev-util/gtk-doc-am-1.17
 	gnome-base/gnome-common
+	sys-devel/autoconf-archive
 	>=sys-devel/gettext-0.19.6
 	virtual/pkgconfig
-	!!=dev-lang/spidermonkey-1.8.2*
 "
-# libmozjs.so is picked up from /usr/lib while compiling, so block at build-time
-# https://bugs.gentoo.org/show_bug.cgi?id=360413
 
-src_prepare() {
+PATCHES=(
 	# Change favorites defaults, bug #479918
-	eapply "${FILESDIR}"/${PN}-3.22.0-defaults.patch
-
+	"${FILESDIR}"/${PN}-3.22.0-defaults.patch
 	# Fix automagic gnome-bluetooth dep, bug #398145
-	eapply "${FILESDIR}"/${PN}-3.12-bluetooth-flag.patch
-
+	"${FILESDIR}"/${PN}-3.12-bluetooth-flag.patch
 	# Add missing path to libmutter-clutter when building .gir, bug #597842
-	eapply "${FILESDIR}"/${PN}-3.22.0-gir-build-fix.patch
-
-	eautoreconf
-	gnome2_src_prepare
-}
+	"${FILESDIR}"/${PN}-3.22.0-gir-build-fix.patch
+	# Little bug when user has toggled version validation in the session, bug #616698
+	"${FILESDIR}"/${PV}-CVE-2017-8288.patch
+)
 
 src_configure() {
 	# Do not error out on warnings
 	gnome2_src_configure \
-		--enable-browser-plugin \
 		--enable-man \
 		$(use_enable !openrc-force systemd) \
 		$(use_with bluetooth) \
